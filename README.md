@@ -16,7 +16,19 @@
 
 ### 1. Googleスプレッドシートを作る
 
-新しいGoogleスプレッドシートを1つ作り、以下3つのシート(タブ)を用意してください。1行目は見出し行、2行目からデータが入ります。
+スプレッドシート自体はなみが作成済みです。
+
+- URL: https://docs.google.com/spreadsheets/d/1jUmxSA123iiUQc5SyoXvhgj_StujDLJuf-Us_2JlMj8/edit
+- シートID(あとで使います): `1jUmxSA123iiUQc5SyoXvhgj_StujDLJuf-Us_2JlMj8`(`docs/config.js`にも設定済み)
+
+ただし、シート内の「タブ(見出し行)を分ける」作業は、なみの今のツールでは自動化できないため、以下だけこばさんご自身で行ってください(2〜3分で終わります)。
+
+1. 上のURLを開く
+2. 一番左下のタブ「Sheet1」を右クリック→「名前を変更」→「条件」にする
+3. 1行目(A1〜H1)に、左から順に `id, genre, keywords, price_min, price_max, target_profit_rate, shipping_cost, active` と入力する
+4. シート下部の「＋」でタブを2つ追加し、それぞれ「通知先」「通知履歴」という名前にする
+5. 「通知先」の1行目(A1〜F1): `id, label, email, gmail_enabled, line_user_id, line_enabled`
+6. 「通知履歴」の1行目(A1〜F1): `item_id, site, price, notified_at, url, title`(中身はツールが自動で書き込むので、見出しだけでOK)
 
 **シート名「条件」**(A1〜H1に見出しを入れる)
 | A:id | B:genre | C:keywords | D:price_min | E:price_max | F:target_profit_rate | G:shipping_cost | H:active |
