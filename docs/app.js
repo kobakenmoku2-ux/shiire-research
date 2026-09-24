@@ -20,7 +20,44 @@ const els = {
   detailOverlay: document.getElementById('detail-overlay'),
   detailCard: document.getElementById('detail-card'),
   statusMessage: document.getElementById('status-message'),
+  helpBtn: document.getElementById('help-btn'),
+  helpOverlay: document.getElementById('help-overlay'),
+  helpCard: document.getElementById('help-card'),
 };
+
+const HELP_HTML = `
+  <h2>使い方</h2>
+  <p>このツールは、メルカリ・ラクマ・ヤフオクを自動で見回って、条件に合う中古PCが出品されたらメール・LINEで知らせてくれます。</p>
+  <p><b>①「条件」タブ</b><br>
+  探したい商品を登録します。「＋新規登録」で追加、一覧の行をクリックすると内容を修正できます。</p>
+  <ul>
+    <li>商品ジャンル名：分かりやすい名前(例: ThinkPad)</li>
+    <li>キーワード：カンマ区切りで複数入力できます。入力した単語を全部含む出品だけが対象になります</li>
+    <li>価格帯：この金額の範囲内の出品だけをチェックします</li>
+    <li>目標利益率：この利益率(%)以上が見込める時だけ通知します</li>
+    <li>想定送料：利益計算に使う送料の目安です</li>
+    <li>有効にする：チェックを外すと、その条件は一時的にチェックされなくなります</li>
+  </ul>
+  <p><b>②「通知先」タブ</b><br>
+  通知を受け取るメールアドレス・LINEを登録します。チェックを外せば、その人には送られなくなります。</p>
+  <p><b>③自動でのチェック</b><br>
+  毎日5時〜22時の1時間おきに自動でチェックします。一度通知した商品は、値段が変わらない限り再通知しません。</p>
+  <p><b>④仕入れ・交渉</b><br>
+  通知に載っているリンクから商品ページを開いて、購入や出品者への連絡はご自身のアプリから行ってください(このツールは自動購入はしません)。</p>
+  <div class="form-actions" style="justify-content:flex-end;">
+    <button class="primary-btn" id="help-close">閉じる</button>
+  </div>
+`;
+
+function openHelp() {
+  els.helpCard.innerHTML = HELP_HTML;
+  els.helpOverlay.classList.remove('hidden');
+  document.getElementById('help-close').addEventListener('click', () => {
+    els.helpOverlay.classList.add('hidden');
+  });
+}
+
+els.helpBtn.addEventListener('click', openHelp);
 
 function showStatus(text) {
   els.statusMessage.textContent = text;

@@ -20,6 +20,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="conditions">条件</button>
       <button class="tab-btn" data-tab="recipients">通知先</button>
+      <button class="secondary-btn" id="help-btn" style="margin-left:16px;">使い方</button>
     </div>
     <button class="secondary-btn" id="signout-btn">ログアウト</button>
   </div>
@@ -55,6 +56,10 @@
 
 <div id="detail-overlay" class="hidden" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;">
   <div class="card" id="detail-card"></div>
+</div>
+
+<div id="help-overlay" class="hidden" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card" id="help-card" style="max-width:560px;max-height:80vh;overflow-y:auto;"></div>
 </div>
 
 <script src="config.js"></script>
