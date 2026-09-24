@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>仕入れリサーチ 管理画面</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+<h1>仕入れリサーチ 管理画面</h1>
+
+<div id="signin-view">
+  <p>Googleアカウントでログインしてください。</p>
+  <button id="google-signin-button" class="primary-btn">Googleでログイン</button>
+</div>
+
+<div id="main-view" class="hidden">
+  <div class="toolbar">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="conditions">条件</button>
+      <button class="tab-btn" data-tab="recipients">通知先</button>
+    </div>
+    <button class="secondary-btn" id="signout-btn">ログアウト</button>
+  </div>
+
+  <div id="conditions-tab">
+    <div class="toolbar">
+      <span></span>
+      <button class="primary-btn" id="new-condition-btn">＋ 新規登録</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>ジャンル</th><th>キーワード</th><th>価格帯</th><th>目標利益率</th><th>状態</th></tr>
+      </thead>
+      <tbody id="conditions-tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="recipients-tab" class="hidden">
+    <div class="toolbar">
+      <span></span>
+      <button class="primary-btn" id="new-recipient-btn">＋ 新規登録</button>
+    </div>
+    <table>
+      <thead>
+        <tr><th>名前</th><th>メール</th><th>LINE</th></tr>
+      </thead>
+      <tbody id="recipients-tbody"></tbody>
+    </table>
+  </div>
+
+  <div id="status-message" class="hidden"></div>
+</div>
+
+<div id="detail-overlay" class="hidden" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;padding:16px;">
+  <div class="card" id="detail-card"></div>
+</div>
+
+<script src="config.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

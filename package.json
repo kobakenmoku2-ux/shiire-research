@@ -1,0 +1,19 @@
+{
+  "name": "shiire-research",
+  "version": "1.0.0",
+  "private": true,
+  "description": "中古PC仕入れリサーチツール(メルカリ・ラクマ・ヤフオク監視 → 利益判定 → Gmail/LINE通知)",
+  "main": "src/run.js",
+  "scripts": {
+    "start": "node src/run.js",
+    "test:rakuma": "node -e \"require('./src/scrapers/rakuma').search({keywords:['ThinkPad']}).then(r=>console.log(JSON.stringify(r,null,2)))\"",
+    "test:yahoo": "node -e \"require('./src/scrapers/yahooAuction').search({keywords:['ThinkPad']}).then(r=>console.log(JSON.stringify(r,null,2)))\"",
+    "test:mercari": "node -e \"require('./src/scrapers/mercari').search({keywords:['ThinkPad']}).then(r=>console.log(JSON.stringify(r,null,2)))\""
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "googleapis": "^144.0.0",
+    "nodemailer": "^6.9.15",
+    "playwright": "^1.47.0"
+  }
+}

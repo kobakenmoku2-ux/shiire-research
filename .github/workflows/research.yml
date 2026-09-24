@@ -1,0 +1,34 @@
+name: 仕入れリサーチ
+
+on:
+  schedule:
+    # 5:00〜22:00(日本時間)の1時間おき = UTC 20:00〜13:00 の1時間おき
+    - cron: '0 20-23,0-13 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: 依存関係のインストール
+        run: npm ci
+
+      - name: Playwright(Chromium)のインストール
+        run: npx playwright install --with-deps chromium
+
+      - name: リサーチ・通知の実行
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          GOOGLE_SHEET_ID: ${{ secrets.GOOGLE_SHEET_ID }}
+          GMAIL_SENDER_ADDRESS: ${{ secrets.GMAIL_SENDER_ADDRESS }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          LINE_CHANNEL_ACCESS_TOKEN: ${{ secrets.LINE_CHANNEL_ACCESS_TOKEN }}
+        run: node src/run.js
