@@ -23,6 +23,7 @@ const els = {
   helpBtn: document.getElementById('help-btn'),
   helpOverlay: document.getElementById('help-overlay'),
   helpCard: document.getElementById('help-card'),
+  biometricBtn: document.getElementById('biometric-btn'),
 };
 
 const HELP_HTML = `
@@ -58,31 +59,132 @@ function openHelp() {
 }
 
 els.helpBtn.addEventListener('click', openHelp);
+els.biometricBtn.addEventListener('click', registerBiometric);
 
 function showStatus(text) {
   els.statusMessage.textContent = text;
   els.statusMessage.classList.toggle('hidden', !text);
 }
 
-// ---------- Google 認証 ----------
+// ---------- Google 認証(ログイン状態の保持) ----------
+
+const TOKEN_KEY = 'shiire_token';
+const TOKEN_EXPIRY_KEY = 'shiire_token_expiry';
+const WEBAUTHN_ID_KEY = 'shiire_webauthn_id';
+
+function saveToken(token, expiresInSec) {
+  localStorage.setItem(TOKEN_KEY, token);
+  localStorage.setItem(TOKEN_EXPIRY_KEY, String(Date.now() + expiresInSec * 1000 - 60000));
+}
+
+function loadValidToken() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const expiry = Number(localStorage.getItem(TOKEN_EXPIRY_KEY) || 0);
+  if (token && Date.now() < expiry) return token;
+  return null;
+}
+
+function clearToken() {
+  localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(TOKEN_EXPIRY_KEY);
+}
+
+function hasBiometric() {
+  return !!localStorage.getItem(WEBAUTHN_ID_KEY);
+}
+
+function bufToBase64url(buf) {
+  return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+function base64urlToBuf(str) {
+  const pad = '='.repeat((4 - (str.length % 4)) % 4);
+  const base64 = (str + pad).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
+}
+
+async function registerBiometric() {
+  try {
+    const cred = await navigator.credentials.create({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        rp: { name: 'リサーチ管理画面' },
+        user: {
+          id: crypto.getRandomValues(new Uint8Array(16)),
+          name: 'shiire-user',
+          displayName: 'shiire-user',
+        },
+        pubKeyCredParams: [
+          { type: 'public-key', alg: -7 },
+          { type: 'public-key', alg: -257 },
+        ],
+        authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required' },
+        timeout: 60000,
+      },
+    });
+    localStorage.setItem(WEBAUTHN_ID_KEY, bufToBase64url(cred.rawId));
+    alert('設定できました。次回からFace ID/Touch IDで開けます。');
+  } catch (e) {
+    alert('設定に失敗しました: ' + e.message);
+  }
+}
+
+async function verifyBiometric() {
+  const storedId = localStorage.getItem(WEBAUTHN_ID_KEY);
+  if (!storedId) return true; // 未設定ならスキップ
+  try {
+    await navigator.credentials.get({
+      publicKey: {
+        challenge: crypto.getRandomValues(new Uint8Array(32)),
+        allowCredentials: [{ id: base64urlToBuf(storedId), type: 'public-key' }],
+        userVerification: 'required',
+        timeout: 60000,
+      },
+    });
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function enterApp(token) {
+  accessToken = token;
+  els.signinView.classList.add('hidden');
+  els.mainView.classList.remove('hidden');
+  loadConditions();
+  loadRecipients();
+}
 
 window.addEventListener('load', () => {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CONFIG.CLIENT_ID,
     scope: SCOPE,
-    callback: (resp) => {
+    callback: async (resp) => {
       if (resp.error) {
         showStatus('ログインに失敗しました: ' + resp.error);
         return;
       }
-      accessToken = resp.access_token;
-      els.signinView.classList.add('hidden');
-      els.mainView.classList.remove('hidden');
-      loadConditions();
-      loadRecipients();
+      saveToken(resp.access_token, resp.expires_in || 3600);
+      enterApp(resp.access_token);
     },
   });
+
+  tryAutoLogin();
 });
+
+async function tryAutoLogin() {
+  const cached = loadValidToken();
+  if (cached) {
+    if (await verifyBiometric()) {
+      enterApp(cached);
+      return;
+    }
+    // 生体認証に失敗した場合は手動ログイン画面へ
+    return;
+  }
+  // トークンが無い/期限切れ → 裏側で静かに再取得を試みる(Google側のセッションが生きていれば画面は出ない)
+  tokenClient.requestAccessToken({ prompt: '' });
+}
 
 els.signinBtn.addEventListener('click', () => {
   tokenClient.requestAccessToken({ prompt: '' });
@@ -93,6 +195,7 @@ els.signoutBtn.addEventListener('click', () => {
     google.accounts.oauth2.revoke(accessToken, () => {});
   }
   accessToken = null;
+  clearToken();
   els.mainView.classList.add('hidden');
   els.signinView.classList.remove('hidden');
 });
