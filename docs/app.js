@@ -305,12 +305,12 @@ function openConditionDetail(condition) {
   };
   els.detailCard.innerHTML = `
     <h2>${c.rowNumber ? '条件を修正' : '新規条件を登録'}</h2>
-    <div class="field"><label>商品ジャンル名</label><input type="text" id="f-genre" value="${escapeAttr(c.genre)}"></div>
-    <div class="field"><label>キーワード(カンマ区切りで複数可)</label><input type="text" id="f-keywords" value="${escapeAttr(c.keywords)}"><div class="hint">例: ThinkPad,X13,16GB</div></div>
-    <div class="field"><label>価格帯 下限</label><input type="number" id="f-price-min" value="${escapeAttr(c.priceMin)}"></div>
-    <div class="field"><label>価格帯 上限</label><input type="number" id="f-price-max" value="${escapeAttr(c.priceMax)}"></div>
-    <div class="field"><label>目標利益率(%)</label><input type="number" id="f-target-rate" value="${escapeAttr(c.targetProfitRate)}"></div>
-    <div class="field"><label>想定送料(円)</label><input type="number" id="f-shipping" value="${escapeAttr(c.shippingCost || '0')}"></div>
+    <div class="field"><label>リサーチ名</label><input type="text" id="f-genre" placeholder="例: ThinkPad" value="${escapeAttr(c.genre)}"></div>
+    <div class="field"><label>キーワード(カンマ区切りで複数可)</label><input type="text" id="f-keywords" placeholder="例: ThinkPad,X13,16GB" value="${escapeAttr(c.keywords)}"><div class="hint">例: ThinkPad,X13,16GB</div></div>
+    <div class="field"><label>価格帯 下限</label><input type="number" id="f-price-min" placeholder="例: 10000" value="${escapeAttr(c.priceMin)}"></div>
+    <div class="field"><label>価格帯 上限</label><input type="number" id="f-price-max" placeholder="例: 60000" value="${escapeAttr(c.priceMax)}"></div>
+    <div class="field"><label>目標利益率(%)</label><input type="number" id="f-target-rate" placeholder="例: 20" value="${escapeAttr(c.targetProfitRate)}"></div>
+    <div class="field"><label>想定送料(円)</label><input type="number" id="f-shipping" placeholder="例: 800" value="${escapeAttr(c.shippingCost || '0')}"></div>
     <div class="field checkbox-field"><input type="checkbox" id="f-active" ${c.active ? 'checked' : ''}><label for="f-active">この条件を有効にする</label></div>
     <div class="form-actions">
       <button class="secondary-btn" id="detail-cancel">キャンセル</button>
