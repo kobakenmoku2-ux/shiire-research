@@ -3,6 +3,11 @@ const { google } = require('googleapis');
 const SHEET_CONDITIONS = '条件';
 const SHEET_RECIPIENTS = '通知先';
 const SHEET_NOTIFIED = '通知履歴';
+const SHEET_SETTINGS = '設定';
+
+const DEFAULT_FEE_RATE = 0.1; // 10%
+const DEFAULT_SHIPPING = 1500; // 円(送料別と分かっている場合)
+const DEFAULT_UNKNOWN_SHIPPING = 0; // 円(送料が要確認の場合)
 
 function getAuth() {
   const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON;
@@ -47,8 +52,53 @@ async function getConditions() {
       priceMin: Number(r[3] || 0),
       priceMax: Number(r[4] || Infinity),
       targetProfitRate: Number(r[5] || 0),
-      estimatedShippingCost: Number(r[6] || 0),
+      estimatedShippingCost: r[6] === undefined || r[6] === '' ? null : Number(r[6]),
     }));
+}
+
+/**
+ * 設定シートを読み込む。列: site(空欄=共通), fee_rate(%), default_shipping(円), unknown_shipping(円)
+ * サイトごとの行があれば優先し、無ければ共通行(site列が空)にフォールバックする。
+ * シート自体が無い場合はデフォルト値を返す。
+ */
+async function getSettings() {
+  let rows = [];
+  try {
+    rows = await readRows(SHEET_SETTINGS);
+  } catch (e) {
+    rows = [];
+  }
+  const common = {
+    feeRate: DEFAULT_FEE_RATE,
+    defaultShipping: DEFAULT_SHIPPING,
+    unknownShipping: DEFAULT_UNKNOWN_SHIPPING,
+  };
+  const bySite = {};
+  rows.forEach((r) => {
+    const site = (r[0] || '').trim();
+    const entry = {
+      feeRate: r[1] === undefined || r[1] === '' ? undefined : Number(r[1]) / 100,
+      defaultShipping: r[2] === undefined || r[2] === '' ? undefined : Number(r[2]),
+      unknownShipping: r[3] === undefined || r[3] === '' ? undefined : Number(r[3]),
+    };
+    if (!site) {
+      if (entry.feeRate !== undefined) common.feeRate = entry.feeRate;
+      if (entry.defaultShipping !== undefined) common.defaultShipping = entry.defaultShipping;
+      if (entry.unknownShipping !== undefined) common.unknownShipping = entry.unknownShipping;
+    } else {
+      bySite[site] = entry;
+    }
+  });
+  return {
+    forSite(site) {
+      const override = bySite[site] || {};
+      return {
+        feeRate: override.feeRate !== undefined ? override.feeRate : common.feeRate,
+        defaultShipping: override.defaultShipping !== undefined ? override.defaultShipping : common.defaultShipping,
+        unknownShipping: override.unknownShipping !== undefined ? override.unknownShipping : common.unknownShipping,
+      };
+    },
+  };
 }
 
 /** 通知先シートを読み込む */
@@ -99,4 +149,4 @@ async function upsertNotified(item, existingRowIndex) {
   }
 }
 
-module.exports = { getConditions, getRecipients, getNotifiedMap, upsertNotified };
+module.exports = { getConditions, getRecipients, getNotifiedMap, upsertNotified, getSettings };

@@ -13,6 +13,11 @@ const els = {
   tabBtns: document.querySelectorAll('.tab-btn'),
   conditionsTab: document.getElementById('conditions-tab'),
   recipientsTab: document.getElementById('recipients-tab'),
+  settingsTab: document.getElementById('settings-tab'),
+  sFeeRate: document.getElementById('s-fee-rate'),
+  sDefaultShipping: document.getElementById('s-default-shipping'),
+  sUnknownShipping: document.getElementById('s-unknown-shipping'),
+  settingsSaveBtn: document.getElementById('settings-save'),
   conditionsTbody: document.getElementById('conditions-tbody'),
   recipientsTbody: document.getElementById('recipients-tbody'),
   newConditionBtn: document.getElementById('new-condition-btn'),
@@ -32,19 +37,21 @@ const HELP_HTML = `
   <p><b>①「条件」タブ</b><br>
   探したい商品を登録します。「＋新規登録」で追加、一覧の行をクリックすると内容を修正できます。</p>
   <ul>
-    <li>商品ジャンル名：分かりやすい名前(例: ThinkPad)</li>
+    <li>リサーチ名：分かりやすい名前(例: ThinkPad)</li>
     <li>キーワード：カンマ区切りで複数入力できます。入力した単語を全部含む出品だけが対象になります</li>
     <li>価格帯：この金額の範囲内の出品だけをチェックします</li>
-    <li>目標利益率：この利益率(%)以上が見込める時だけ通知します</li>
-    <li>想定送料：利益計算に使う送料の目安です</li>
+    <li>目標利益率：この利益率(%)以上が見込める時だけ通知します(デフォルト20%)</li>
+    <li>送料別と分かっている場合の送料：空欄なら「設定」タブの値を使います</li>
     <li>有効にする：チェックを外すと、その条件は一時的にチェックされなくなります</li>
   </ul>
   <p><b>②「通知先」タブ</b><br>
   通知を受け取るメールアドレス・LINEを登録します。チェックを外せば、その人には送られなくなります。</p>
-  <p><b>③自動でのチェック</b><br>
+  <p><b>③「設定」タブ</b><br>
+  販売手数料率や送料のデフォルト値を設定します。ヤフオクは送料込み/別が自動で判定されますが、ラクマ・メルカリは一覧からは判定できないため「送料要確認」として通知され、「送料が要確認の場合に見込む送料」の金額で計算されます(基本的に送料込みの出品が多いためデフォルトは0円)。</p>
+  <p><b>④自動でのチェック</b><br>
   毎日5時〜22時の1時間おきに自動でチェックします。一度通知した商品は、値段が変わらない限り再通知しません。</p>
-  <p><b>④仕入れ・交渉</b><br>
-  通知に載っているリンクから商品ページを開いて、購入や出品者への連絡はご自身のアプリから行ってください(このツールは自動購入はしません)。</p>
+  <p><b>⑤仕入れ・交渉</b><br>
+  通知に載っているリンクから商品ページを開いて、購入や出品者への連絡はご自身のアプリから行ってください(このツールは自動購入はしません)。送料が「要確認」の場合は、購入前に商品ページで必ずご確認ください。</p>
   <div class="form-actions" style="justify-content:flex-end;">
     <button class="primary-btn" id="help-close">閉じる</button>
   </div>
@@ -153,6 +160,7 @@ function enterApp(token) {
   els.mainView.classList.remove('hidden');
   loadConditions();
   loadRecipients();
+  loadSettings();
 }
 
 window.addEventListener('load', () => {
@@ -209,6 +217,7 @@ els.tabBtns.forEach((btn) => {
     const tab = btn.dataset.tab;
     els.conditionsTab.classList.toggle('hidden', tab !== 'conditions');
     els.recipientsTab.classList.toggle('hidden', tab !== 'recipients');
+    els.settingsTab.classList.toggle('hidden', tab !== 'settings');
   });
 });
 
@@ -242,6 +251,16 @@ async function sheetsAppendRow(sheetName, values) {
     body: JSON.stringify({ values: [values] }),
   });
   if (!res.ok) throw new Error(`登録に失敗しました(${res.status})`);
+}
+
+async function sheetsBatchUpdate(requests) {
+  const url = `${SHEETS_BASE}/${CONFIG.SPREADSHEET_ID}:batchUpdate`;
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  });
+  if (!res.ok) throw new Error(`シートの更新に失敗しました(${res.status})`);
 }
 
 function newId() {
@@ -299,8 +318,8 @@ function openConditionDetail(condition) {
     keywords: '',
     priceMin: '',
     priceMax: '',
-    targetProfitRate: '',
-    shippingCost: '0',
+    targetProfitRate: '20',
+    shippingCost: '',
     active: true,
   };
   els.detailCard.innerHTML = `
@@ -310,7 +329,7 @@ function openConditionDetail(condition) {
     <div class="field"><label>価格帯 下限</label><input type="number" id="f-price-min" placeholder="例: 10000" value="${escapeAttr(c.priceMin)}"></div>
     <div class="field"><label>価格帯 上限</label><input type="number" id="f-price-max" placeholder="例: 60000" value="${escapeAttr(c.priceMax)}"></div>
     <div class="field"><label>目標利益率(%)</label><input type="number" id="f-target-rate" placeholder="例: 20" value="${escapeAttr(c.targetProfitRate)}"></div>
-    <div class="field"><label>想定送料(円)</label><input type="number" id="f-shipping" placeholder="例: 800" value="${escapeAttr(c.shippingCost || '0')}"></div>
+    <div class="field"><label>送料別と分かっている場合の送料(円)</label><input type="number" id="f-shipping" placeholder="空欄なら設定タブの値を使用" value="${escapeAttr(c.shippingCost)}"></div>
     <div class="field checkbox-field"><input type="checkbox" id="f-active" ${c.active ? 'checked' : ''}><label for="f-active">この条件を有効にする</label></div>
     <div class="form-actions">
       <button class="secondary-btn" id="detail-cancel">キャンセル</button>
@@ -434,6 +453,43 @@ function closeDetail() {
 
 els.newConditionBtn.addEventListener('click', () => openConditionDetail(null));
 els.newRecipientBtn.addEventListener('click', () => openRecipientDetail(null));
+
+// ---------- 設定タブ ----------
+
+const SETTINGS_DEFAULTS = { feeRate: 10, defaultShipping: 1500, unknownShipping: 0 };
+
+async function loadSettings() {
+  try {
+    const rows = await sheetsGet('設定!A2:D2');
+    const r = rows[0] || [];
+    els.sFeeRate.value = r[1] !== undefined && r[1] !== '' ? r[1] : SETTINGS_DEFAULTS.feeRate;
+    els.sDefaultShipping.value = r[2] !== undefined && r[2] !== '' ? r[2] : SETTINGS_DEFAULTS.defaultShipping;
+    els.sUnknownShipping.value = r[3] !== undefined && r[3] !== '' ? r[3] : SETTINGS_DEFAULTS.unknownShipping;
+  } catch (e) {
+    // 「設定」シートがまだ無い場合は、画面の入力欄にデフォルト値だけ表示しておく(保存時にシートを自動作成する)
+    els.sFeeRate.value = SETTINGS_DEFAULTS.feeRate;
+    els.sDefaultShipping.value = SETTINGS_DEFAULTS.defaultShipping;
+    els.sUnknownShipping.value = SETTINGS_DEFAULTS.unknownShipping;
+  }
+}
+
+els.settingsSaveBtn.addEventListener('click', async () => {
+  const row = ['', els.sFeeRate.value, els.sDefaultShipping.value, els.sUnknownShipping.value];
+  try {
+    await sheetsUpdateRow('設定', 2, row);
+  } catch (e) {
+    // 「設定」シートが無いため失敗した場合は、シートを作って見出し行も入れてから再度保存する
+    try {
+      await sheetsBatchUpdate([{ addSheet: { properties: { title: '設定' } } }]);
+      await sheetsUpdateRow('設定', 1, ['site', 'fee_rate', 'default_shipping', 'unknown_shipping']);
+      await sheetsUpdateRow('設定', 2, row);
+    } catch (e2) {
+      alert(e2.message);
+      return;
+    }
+  }
+  alert('保存しました');
+});
 
 // ---------- ユーティリティ ----------
 

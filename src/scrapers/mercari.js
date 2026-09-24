@@ -42,6 +42,7 @@ function parseItems(html) {
       title: m[4],
       price: parseInt(m[3].replace(/,/g, ''), 10),
       url: `https://jp.mercari.com${m[1]}`,
+      shippingStatus: 'unknown', // 一覧からは送料込み/別を判定できない
     });
   }
   return items;

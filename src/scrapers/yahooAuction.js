@@ -14,17 +14,18 @@ async function search({ keywords, soldOnly = false }) {
   const html = await fetchHtml(base);
 
   const regex =
-    /data-auction-price="(\d+)"[\s\S]{1,300}?href="(https:\/\/auctions\.yahoo\.co\.jp\/jp\/auction\/[a-z0-9]+)"[\s\S]{1,1200}?alt="([^"]+)"/g;
+    /data-auction-price="(\d+)"[\s\S]{1,150}?data-auction-isfreeshipping="([^"]*)"[\s\S]{1,300}?href="(https:\/\/auctions\.yahoo\.co\.jp\/jp\/auction\/[a-z0-9]+)"[\s\S]{1,1200}?alt="([^"]+)"/g;
   const items = [];
   const seen = new Set();
   let m;
   while ((m = regex.exec(html)) !== null) {
     const price = parseInt(m[1], 10);
-    const url = m[2];
-    const title = decodeEntities(m[3]);
+    const shippingStatus = m[2] === '1' ? 'included' : 'separate';
+    const url = m[3];
+    const title = decodeEntities(m[4]);
     if (seen.has(url)) continue;
     seen.add(url);
-    items.push({ site: 'yahoo_auction', itemId: url.split('/').pop(), title, price, url });
+    items.push({ site: 'yahoo_auction', itemId: url.split('/').pop(), title, price, url, shippingStatus });
   }
   return items;
 }

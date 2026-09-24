@@ -35,6 +35,7 @@ async function run() {
 
   const recipients = await sheets.getRecipients();
   const notifiedMap = await sheets.getNotifiedMap();
+  const settings = await sheets.getSettings();
 
   /** @type {Array<object>} */
   const toNotify = [];
@@ -48,7 +49,7 @@ async function run() {
     }
 
     const items = await collectItemsForCondition(condition);
-    const candidates = filterCandidates(items, condition, estimatedSalePrice).map((item) => ({
+    const candidates = filterCandidates(items, condition, estimatedSalePrice, settings.forSite).map((item) => ({
       ...item,
       genre: condition.genre,
     }));

@@ -1,3 +1,5 @@
+const { shippingStatusLabel } = require('./profitCalc');
+
 const SITE_LABEL = { mercari: 'メルカリ', rakuma: 'ラクマ', yahoo_auction: 'ヤフオク' };
 
 function buildMessageText(item) {
@@ -5,6 +7,7 @@ function buildMessageText(item) {
     `【${item.genre}】${SITE_LABEL[item.site] || item.site}`,
     item.title,
     `仕入れ値: ¥${item.price.toLocaleString()} / 想定売値: ¥${item.estimatedSalePrice.toLocaleString()}`,
+    `送料: ${shippingStatusLabel(item.shippingStatus)}${item.shippingCost ? `(¥${item.shippingCost.toLocaleString()}として計算)` : ''}`,
     `期待利益: ¥${item.expectedProfit.toLocaleString()}(利益率 ${item.profitRate}%)`,
     item.url,
   ].join('\n');

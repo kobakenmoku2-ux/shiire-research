@@ -28,7 +28,14 @@ async function search({ keywords, soldOnly = false }) {
     const link = [...links].reverse().find((l) => l.index < m.index);
     if (!link || seen.has(link.url)) continue;
     seen.add(link.url);
-    items.push({ site: 'rakuma', itemId: link.url.split('/').filter(Boolean).pop(), title, price, url: link.url });
+    items.push({
+      site: 'rakuma',
+      itemId: link.url.split('/').filter(Boolean).pop(),
+      title,
+      price,
+      url: link.url,
+      shippingStatus: 'unknown', // 一覧からは送料込み/別を判定できない
+    });
   }
   return items;
 }
